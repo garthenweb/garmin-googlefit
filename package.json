@@ -1,0 +1,22 @@
+{
+  "name": "Garmin Exporter",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "babel-node index.js"
+  },
+  "author": "Jannick Garthen <jannick.garthen@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "es6-promisify": "^5.0.0",
+    "googleapis": "^16.0.0",
+    "open": "0.0.5",
+    "phantom": "^3.2.1",
+    "split": "^1.0.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-preset-env": "^1.1.7"
+  }
+}
