@@ -1,5 +1,5 @@
 {
-  "name": "Garmin Exporter",
+  "name": "garmin-googlefit",
   "version": "0.0.0",
   "description": "",
   "main": "index.js",
