@@ -1,6 +1,7 @@
 # custom
 credentials.json
 storage.json
+.vscode
 
 # NodeJS
 node_modules
