@@ -11,6 +11,7 @@ const OAuth2 = google.auth.OAuth2;
 const fitness = google.fitness('v1');
 const dataSourceCreate = promisify(fitness.users.dataSources.create);
 const dataSourceDatasetsPatch = promisify(fitness.users.dataSources.datasets.patch);
+const dataSourceDatasetsGet = promisify(fitness.users.dataSources.datasets.get);
 
 google.options({ auth: oauth2Client });
 
@@ -55,13 +56,26 @@ google.options({ auth: oauth2Client });
 
   const weight = await getRecentWeight();
   const dataSourceBody = createDataset(dataStreamId, weight);
+  const datasetId = `${dataSourceBody.minStartTimeNs}-${dataSourceBody.maxEndTimeNs}`;
+  const remoteDataSource = await dataSourceDatasetsGet({
+    dataSourceId: dataStreamId,
+    datasetId,
+    limit: 1,
+    userId: 'me',
+  });
+  
+  if (remoteDataSource.point.length >= 1) {
+    console.log(`Duplicated entry found: ${weight.date}, ${weight.value} ${weight.unit}`);
+    return;
+  }
+
   await dataSourceDatasetsPatch({
     dataSourceId: dataStreamId,
-    datasetId: `${dataSourceBody.minStartTimeNs}-${dataSourceBody.maxEndTimeNs}`,
+    datasetId,
     resource: dataSourceBody,
     userId: 'me',
   });
-  console.log(`Successfully created dataset for the ${weight.date} with ${weight.value} ${weight.unit}`);
+  console.log(`Successfully created dataset: ${weight.date}, ${weight.value} ${weight.unit}`);
 })();
 
 const dataSourceResource = {
