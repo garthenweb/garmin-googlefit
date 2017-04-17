@@ -7,6 +7,10 @@ import getRecentWeight from './garminWeight';
 import storage from './storage';
 import credentials from './credentials.json';
 
+// monkey patch console log for logs with date 
+const originalLog = console.log;
+global.console.log = (...args) => originalLog(`[${new Date().toISOString()}]`, ...args);
+
 const OAuth2 = google.auth.OAuth2;
 const fitness = google.fitness('v1');
 const dataSourceCreate = promisify(fitness.users.dataSources.create);
@@ -16,6 +20,7 @@ const dataSourceDatasetsGet = promisify(fitness.users.dataSources.datasets.get);
 google.options({ auth: oauth2Client });
 
 (async () => {
+  console.log('sync started...');
   let tokens = await storage.get('tokens');
   if (!tokens) {
     requestFitAuth();
@@ -66,16 +71,16 @@ google.options({ auth: oauth2Client });
   
   if (remoteDataSource.point.length >= 1) {
     console.log(`Duplicated entry found: ${weight.date}, ${weight.value} ${weight.unit}`);
-    return;
+  } else {
+    await dataSourceDatasetsPatch({
+      dataSourceId: dataStreamId,
+      datasetId,
+      resource: dataSourceBody,
+      userId: 'me',
+    });
+    console.log(`Successfully created dataset: ${weight.date}, ${weight.value} ${weight.unit}`);
   }
-
-  await dataSourceDatasetsPatch({
-    dataSourceId: dataStreamId,
-    datasetId,
-    resource: dataSourceBody,
-    userId: 'me',
-  });
-  console.log(`Successfully created dataset: ${weight.date}, ${weight.value} ${weight.unit}`);
+  console.log('sync ended!');
 })();
 
 const dataSourceResource = {
