@@ -31,24 +31,23 @@ export default async () => {
   }, credentials.garmin_username, credentials.garmin_password);
 
   await waitForEvaluated(page)(() => location.href, (res) => res === successAddress);
-  await page.evaluate(() => location.href = 'https://connect.garmin.com/modern/weight/weekly/0');
+  await page.evaluate((from, to) => location.href = 'https://connect.garmin.com/modern/proxy/userprofile-service/userprofile/personal-information/weightWithOutbound/filterByDay?from=' + from + '&until=' + to, Date.now() - (1000 * 60 * 60 * 24), Date.now());
   const weight = await waitForEvaluated(page)(() => {
-    const dateEl = document.getElementById('localDateTimeClickedTableRow');
-    const weightEl = document.getElementById('directWeightClickedTableRow');
-    if (!weightEl) {
+    try {
+      const dataset = JSON.parse(document.body.children[0].innerHTML)[0];
+      return {
+        value: dataset.weight / 1000,
+        unit: 'kg',
+        date: dataset.date,
+      };
+    } catch(e) {
       return false;
     }
-    const weightUnitEl = weightEl.parentNode.getElementsByClassName('js-weight-unit')[0];
-    return {
-      value: weightEl.innerText,
-      unit: weightUnitEl.innerText,
-      date: dateEl.innerText,
-    };
   }, Boolean);
 
   instance.exit(1);
   return {
-    value: parseFloat(weight.value.replace(',', '.'), 10),
+    value: weight.value,
     unit: weight.unit,
     date: new Date(weight.date),
   };
