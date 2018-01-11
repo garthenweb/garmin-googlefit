@@ -12,11 +12,11 @@
     "es6-promisify": "^5.0.0",
     "googleapis": "^19.0.0",
     "open": "0.0.5",
-    "phantom": "^4.0.2",
-    "split": "^1.0.0"
+    "phantom": "^4.0.12",
+    "split": "^1.0.1"
   },
   "devDependencies": {
-    "babel-cli": "^6.18.0",
-    "babel-preset-env": "^1.1.7"
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1"
   }
 }
