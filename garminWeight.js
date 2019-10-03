@@ -2,7 +2,7 @@ import puppeteer from "puppeteer";
 import credentials from "./credentials.json";
 
 const loginAddress =
-  "https://sso.garmin.com/sso/login?service=https%3A%2F%2Fconnect.garmin.com%2Fmodern%2F&webhost=olaxpw-conctmodern010&source=https%3A%2F%2Fconnect.garmin.com%2Fde-DE%2Fsignin&redirectAfterAccountLoginUrl=https%3A%2F%2Fconnect.garmin.com%2Fmodern%2F&redirectAfterAccountCreationUrl=https%3A%2F%2Fconnect.garmin.com%2Fmodern%2F&gauthHost=https%3A%2F%2Fsso.garmin.com%2Fsso&locale=de_DE&id=gauth-widget&cssUrl=https%3A%2F%2Fstatic.garmincdn.com%2Fcom.garmin.connect%2Fui%2Fcss%2Fgauth-custom-v1.2-min.css&clientId=GarminConnect&rememberMeShown=true&rememberMeChecked=false&createAccountShown=true&openCreateAccount=false&usernameShown=false&displayNameShown=true&consumeServiceTicket=false&initialFocus=true&embedWidget=false&generateExtraServiceTicket=false&globalOptInShown=false&globalOptInChecked=false";
+  "https://sso.garmin.com/sso/signin?service=https%253A%252F%252Fconnect.garmin.com%252Fmodern%252F&webhost=https%253A%252F%252Fconnect.garmin.com%252Fmodern%252F&source=https%3A%2F%2Fconnect.garmin.com%2Fsignin%2F&redirectAfterAccountLoginUrl=https%253A%252F%252Fconnect.garmin.com%252Fmodern%252F&redirectAfterAccountCreationUrl=https%253A%252F%252Fconnect.garmin.com%252Fmodern%252F&gauthHost=https%3A%2F%2Fsso.garmin.com%2Fsso&locale=en_US&id=gauth-widget&cssUrl=https%3A%2F%2Fstatic.garmincdn.com%2Fcom.garmin.connect%2Fui%2Fcss%2Fgauth-custom-v1.2-min.css&privacyStatementUrl=https%3A%2F%2Fwww.garmin.com%2Fen-US%2Fprivacy%2Fconnect%2F&clientId=GarminConnect&rememberMeShown=true&rememberMeChecked=false&createAccountShown=true&openCreateAccount=false&displayNameShown=false&consumeServiceTicket=false&initialFocus=true&embedWidget=false&generateExtraServiceTicket=true&generateTwoExtraServiceTickets=false&generateNoServiceTicket=false&globalOptInShown=true&globalOptInChecked=false&mobile=false&connectLegalTerms=true&showTermsOfUse=false&showPrivacyPolicy=false&showConnectLegalAge=false&locationPromptShown=true&showPassword=true";
 const successAddress = "https://connect.garmin.com/modern/";
 
 const waitForEvaluated = page => (fn, checker, timeout = 10000) => {
@@ -49,15 +49,10 @@ export default async () => {
     () => location.href,
     res => res === successAddress
   );
-  await page.evaluate(
-    (from, to) =>
-      (location.href =
-        "https://connect.garmin.com/modern/proxy/userprofile-service/userprofile/personal-information/weightWithOutbound/filterByDay?from=" +
-        from +
-        "&until=" +
-        to),
-    Date.now() - 1000 * 60 * 60 * 24,
-    Date.now()
+  await page.goto(
+    `https://connect.garmin.com/modern/proxy/userprofile-service/userprofile/personal-information/weightWithOutbound/filterByDay?from=${Date.now() -
+      1000 * 60 * 60 * 24}&until=${Date.now()}`,
+    { waitUntil: "networkidle2" }
   );
   const weight = await waitForEvaluated(page)(() => {
     try {
