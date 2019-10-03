@@ -23,77 +23,79 @@ const dataSourceDatasetsGet = promisify(fitness.users.dataSources.datasets.get);
 google.options({ auth: oauth2Client });
 
 (async () => {
-  console.log("sync started...");
-  let tokens = await storage.get("tokens");
-  if (!tokens) {
-    requestFitAuth();
-    console.log(
-      "Accept access and copy the code query parameter from the redirect url into the terminal and hit enter"
-    );
+  try {
+    console.log("sync started...");
+    let tokens = await storage.get("tokens");
+    if (!tokens) {
+      requestFitAuth();
+      console.log(
+        "Accept access and copy the code query parameter from the redirect url into the terminal and hit enter"
+      );
 
-    const splitter = require("split")();
-    const stdInListener = process.stdin.pipe(splitter);
-    tokens = await new Promise((resolve, reject) => {
-      stdInListener.on("data", function setCredentials(code) {
-        console.log(`receive code \`${code}\``);
-        stdInListener.removeListener("data", setCredentials);
-        process.stdin.unpipe(splitter);
+      const splitter = require("split")();
+      const stdInListener = process.stdin.pipe(splitter);
+      tokens = await new Promise((resolve, reject) => {
+        stdInListener.on("data", function setCredentials(code) {
+          console.log(`receive code \`${code}\``);
+          stdInListener.removeListener("data", setCredentials);
+          process.stdin.unpipe(splitter);
 
-        oauth2Client.getToken(code, async (err, tokens) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve(tokens);
+          oauth2Client.getToken(code, async (err, tokens) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            resolve(tokens);
+          });
         });
       });
-    });
-    await storage.set("tokens", tokens);
-  }
+      await storage.set("tokens", tokens);
+    }
 
-  oauth2Client.setCredentials(tokens);
+    oauth2Client.setCredentials(tokens);
 
-  let dataStreamId = await storage.get("dataStreamId");
-  // if data stream was not stored, create it
-  if (!dataStreamId) {
-    const dataSource = await dataSourceCreate({
-      resource: dataSourceResource,
-      userId: "me"
-    });
-    await storage.set("dataStreamId", dataSource.dataStreamId);
-    dataStreamId = dataSource.dataStreamId;
-  }
+    let dataStreamId = await storage.get("dataStreamId");
+    // if data stream was not stored, create it
+    if (!dataStreamId) {
+      const dataSource = await dataSourceCreate({
+        resource: dataSourceResource,
+        userId: "me"
+      });
+      await storage.set("dataStreamId", dataSource.dataStreamId);
+      dataStreamId = dataSource.dataStreamId;
+    }
 
-  const weight = await getRecentWeight();
-  const dataSourceBody = createDataset(dataStreamId, weight);
-  const datasetId = `${dataSourceBody.minStartTimeNs}-${
-    dataSourceBody.maxEndTimeNs
-  }`;
-  const remoteDataSource = await dataSourceDatasetsGet({
-    dataSourceId: dataStreamId,
-    datasetId,
-    limit: 1,
-    userId: "me"
-  });
-
-  if (remoteDataSource.point.length >= 1) {
-    console.log(
-      `Duplicated entry found: ${weight.date}, ${weight.value} ${weight.unit}`
-    );
-  } else {
-    await dataSourceDatasetsPatch({
+    const weight = await getRecentWeight();
+    const dataSourceBody = createDataset(dataStreamId, weight);
+    const datasetId = `${dataSourceBody.minStartTimeNs}-${dataSourceBody.maxEndTimeNs}`;
+    const remoteDataSource = await dataSourceDatasetsGet({
       dataSourceId: dataStreamId,
       datasetId,
-      resource: dataSourceBody,
+      limit: 1,
       userId: "me"
     });
-    console.log(
-      `Successfully created dataset: ${weight.date}, ${weight.value} ${
-        weight.unit
-      }`
-    );
+
+    if (remoteDataSource.point.length >= 1) {
+      console.log(
+        `Duplicated entry found: ${weight.date}, ${weight.value} ${weight.unit}`
+      );
+    } else {
+      await dataSourceDatasetsPatch({
+        dataSourceId: dataStreamId,
+        datasetId,
+        resource: dataSourceBody,
+        userId: "me"
+      });
+      console.log(
+        `Successfully created dataset: ${weight.date}, ${weight.value} ${weight.unit}`
+      );
+    }
+    console.log("sync ended!");
+  } catch (e) {
+    console.error("Sync failed!");
+    console.error(e);
+    process.exit(1);
   }
-  console.log("sync ended!");
 })();
 
 const dataSourceResource = {

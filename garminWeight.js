@@ -5,18 +5,29 @@ const loginAddress =
   "https://sso.garmin.com/sso/login?service=https%3A%2F%2Fconnect.garmin.com%2Fmodern%2F&webhost=olaxpw-conctmodern010&source=https%3A%2F%2Fconnect.garmin.com%2Fde-DE%2Fsignin&redirectAfterAccountLoginUrl=https%3A%2F%2Fconnect.garmin.com%2Fmodern%2F&redirectAfterAccountCreationUrl=https%3A%2F%2Fconnect.garmin.com%2Fmodern%2F&gauthHost=https%3A%2F%2Fsso.garmin.com%2Fsso&locale=de_DE&id=gauth-widget&cssUrl=https%3A%2F%2Fstatic.garmincdn.com%2Fcom.garmin.connect%2Fui%2Fcss%2Fgauth-custom-v1.2-min.css&clientId=GarminConnect&rememberMeShown=true&rememberMeChecked=false&createAccountShown=true&openCreateAccount=false&usernameShown=false&displayNameShown=true&consumeServiceTicket=false&initialFocus=true&embedWidget=false&generateExtraServiceTicket=false&globalOptInShown=false&globalOptInChecked=false";
 const successAddress = "https://connect.garmin.com/modern/";
 
-const waitForEvaluated = page => (fn, checker) =>
-  new Promise(resolve => {
+const waitForEvaluated = page => (fn, checker, timeout = 10000) => {
+  let remainingTimeout = timeout;
+  const interval = 1000;
+  return new Promise((resolve, reject) => {
     const id = setInterval(async () => {
+      if (remainingTimeout <= 0) {
+        reject(new Error(`Timed out after ${timeout} ms`));
+        clearInterval(id);
+        return;
+      }
       try {
         let res = await page.evaluate(fn);
         if (checker(res)) {
           clearInterval(id);
           resolve(res);
         }
-      } catch (e) {}
-    }, 1000);
+      } catch (e) {
+      } finally {
+        remainingTimeout -= interval;
+      }
+    }, interval);
   });
+};
 
 export default async () => {
   const browser = await puppeteer.launch({
@@ -24,7 +35,6 @@ export default async () => {
   });
   const page = await browser.newPage();
   await page.goto(loginAddress, { waitUntil: "networkidle2" });
-
   await page.evaluate(
     (username, password) => {
       document.getElementById("username").value = username;
