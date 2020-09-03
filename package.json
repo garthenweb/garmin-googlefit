@@ -12,7 +12,7 @@
     "es6-promisify": "^6.0.1",
     "googleapis": "^19.0.0",
     "open": "0.0.5",
-    "puppeteer": "^1.12.1",
+    "puppeteer": "^1.13.0",
     "split": "^1.0.1"
   },
   "devDependencies": {
